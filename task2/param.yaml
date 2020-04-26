@@ -1,0 +1,8 @@
+frequency_cluster : 4
+recency_cluster : 4
+profit_cluster : 4
+seg_cluster: 15
+
+frequency_weight : 1.
+recency_weight : 1.
+profit_weight : 1.
