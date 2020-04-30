@@ -174,11 +174,11 @@ def prep_input(customer_clean):
     customer_clean = helper.get_age(customer_clean)
 
     customer_clean, num = get_RFM.get_clust(customer_clean, 'tenure', 10, min_cluster = 2, mode='auto')
-    print('optimal tenure cluster: ' + str(num))
+    print('optimal cluster: ' + str(num))
     customer_clean, num = get_RFM.get_clust(customer_clean, 'Age', 15, min_cluster = 7, mode='auto')
-    print('optimal Age cluster: ' + str(num))
+    print('optimal cluster: ' + str(num))
     customer_clean, num = get_RFM.get_clust(customer_clean, 'past_3_years_bike_related_purchases', 20, min_cluster = 5, mode='auto')
-    print('optimal purchases cluster: ' + str(num))
+    print('optimal cluster: ' + str(num))
 
     dummies = ['AgeCluster', 'gender', 'wealth_segment', 'owns_car', 'tenureCluster', 'deceased_indicator']
     customer_clean = get_dummies(customer_clean, dummies)
@@ -194,21 +194,21 @@ if train:
     # print(corr_matrix['LTVCluster'].sort_values(ascending=False).to_string())
     y = y[y['customer_id'].isin(X_demo['customer_id'])]
 
-    model = 'regressor'
+    model = 'classifier'
 
 
-    X_demo = pd.merge(X_demo, tx_class[tx_class['customer_id'].isin(X_demo['customer_id'])], on='customer_id')
-    y_col = y.columns
+    # X_demo = pd.merge(X_demo, tx_class[tx_class['customer_id'].isin(X_demo['customer_id'])], on='customer_id')
+    # y_col = y.columns
 
-    X_demo = pd.merge(X_demo, y, on='customer_id')
-    X_demo = X_demo.sample(frac=1).reset_index(drop=True)
-    y = X_demo[y_col]
+    # X_demo = pd.merge(X_demo, y, on='customer_id')
+    # X_demo = X_demo.sample(frac=1).reset_index(drop=True)
+    # y = X_demo[y_col]
     ids = X_demo['customer_id']
 
-    X_demo.drop(columns=y_col, inplace=True)
+    # X_demo.drop(columns=y_col, inplace}=True)
 
 
-    if model == 'classifier':
+    if model != 'regressor':
         y = y['LTVCluster']
     elif model == 'regressor':
         y = y['OverallScore1']
@@ -221,27 +221,18 @@ else:
 # In[10]:
 if train:
     prev = time()
-    if model == 'classifier':
+    if model != 'regressor':
         ltv_xgb_model = xgb.XGBClassifier(max_depth=3, n_estimators=300, learning_rate=0.1,objective= 'multi:softprob',n_jobs=-1, tree_method='gpu_hist', gpu_id=0).fit(X_train, y_train)
     elif model == 'regressor':
-        ltv_xgb_model = xgb.XGBRegressor(max_depth=3, n_estimators=800, learning_rate=0.1,objective='reg:squarederror',n_jobs=-1, tree_method='gpu_hist', gpu_id=0).fit(X_train, y_train)
+        ltv_xgb_model = xgb.XGBRegressor(max_depth=5, n_estimators=800, learning_rate=0.1,objective='reg:squarederror',n_jobs=-1, tree_method='gpu_hist', gpu_id=0).fit(X_train, y_train)
     after = time()
     print('elapsed: ' + str(after - prev))
 
-if model == 'classifier':
-    print('Accuracy of XGB classifier on training set: {:.2f}'
-        .format(ltv_xgb_model.score(X_train, y_train)))
-    print('Accuracy of XGB classifier on test set: {:.2f}'
-        .format(ltv_xgb_model.score(X_test[X_train.columns], y_test)))
-elif model == 'regressor':
-    _y_train = ltv_xgb_model.predict(X_train)
-    _y_test = ltv_xgb_model.predict(X_test)
-    train_mse = np.mean(pow(y_train -_y_train ,2))
-    test_mse = np.mean(pow(y_test - _y_test, 2))
-    print('MSE of XGB regressor on training set: {:.2f}'
-        .format(train_mse))
-    print('MSE of XGB regressor on test set: {:.2f}'
-        .format(test_mse))
+
+print('Accuracy of XGB classifier on training set: {:.2f}'
+    .format(ltv_xgb_model.score(X_train, y_train)))
+print('Accuracy of XGB classifier on test set: {:.2f}'
+    .format(ltv_xgb_model.score(X_test[X_train.columns], y_test)))
 
 acc.append([ltv_xgb_model.score(X_train, y_train), ltv_xgb_model.score(X_test[X_train.columns], y_test)])
 

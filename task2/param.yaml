@@ -6,3 +6,6 @@ seg_cluster: 15
 frequency_weight : 1.
 recency_weight : 1.
 profit_weight : 1.
+
+
+train : 1
