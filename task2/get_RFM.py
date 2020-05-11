@@ -2,10 +2,10 @@ import pandas as pd
 import numpy as np
 import datetime
 import matplotlib.pyplot as plt
-import helper
+from task2 import helper
 from importlib import reload
 reload(helper)
-from helper import *
+from task2.helper import *
 import chart_studio.plotly as py
 import plotly.offline as pyoff
 import plotly.graph_objs as go
@@ -15,17 +15,48 @@ from sklearn.metrics import classification_report,confusion_matrix
 import xgboost as xgb
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
 import yaml
+from sklearn.metrics import silhouette_score
 
 with open('param.yaml', 'rb') as f:
     params = yaml.load(f)
 
-def get_clust(data, field, num_cluster, order):
-    kmeans = KMeans(n_clusters=num_cluster)
-    kmeans.fit(data[[field]])
+train = int(params['train'])
+cluster_info = dict()
+
+
+def get_clust(data, field, num_cluster, order=True, min_cluster=2,  mode='manual'):
+    global cluster_info
+    if train:
+        if mode == 'auto':
+            # mean = data[field].mean()
+            # std = data[field].std()
+
+            # data = data[data[field] < mean + 3*std]
+            sil = []
+            kmax = num_cluster
+
+            # dissimilarity would not be defined for a single cluster, thus, minimum number of clusters should be 2
+            for k in range(min_cluster, kmax+1):
+                kmeans = KMeans(n_clusters = k).fit(data[[field]])
+                labels = kmeans.labels_
+                sil.append(silhouette_score(data[[field]], labels, metric = 'euclidean'))
+            num_cluster = np.argmax(np.array(sil)) + min_cluster
+
+        kmeans = KMeans(n_clusters=num_cluster)
+        kmeans.fit(data[[field]])
+        cluster_info[field] = kmeans
+    else:
+        if field in cluster_info.keys:
+            kmeans = cluster_info[field]
+        else:
+            print('error, not such field in clustering')
     data[field + 'Cluster'] = kmeans.predict(data[[field]])
-    data.groupby(field + 'Cluster')[field].describe()
     data = order_cluster(field + 'Cluster', field,data, order)
-    return data
+
+    if mode == 'auto':
+        return data, num_cluster
+    else:
+        return data
 
 
 def get_freq(tx_user,transaction):

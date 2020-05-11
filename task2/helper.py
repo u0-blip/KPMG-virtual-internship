@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import datetime
 
 
 def plot_bars(cats, bar, theme):
@@ -40,28 +42,24 @@ def plot_pie(num_cat, labels):
     explode = np.zeros_like(num_cat, dtype=np.float)
     # only explode the top 20%
     top_args = np.argsort(-num_cat)[:int(np.ceil(len(num_cat)*0.2))]
-    print(top_args)
     explode[top_args] = 0.1
-    print(explode)
     plt.pie(num_cat, autopct='%1.1f%%', explode=explode, labels=labels)
     title = 'Pie distribution'
     plt.savefig(title)
 
-def analyse_cat(df, cat_data, theme):
+def analyse_cat(df, cat_data, name_field):
+    cat_data = df[cat_data]
     cats = pd.Categorical(cat_data)
 
     num_cat = np.array([(cat_data == cat).sum() for cat in cats.categories])
     args = np.argsort(num_cat)[::-1]
     num_cat[::-1].sort()
-    print(num_cat)
     cats.categories = cats.categories[args]
 
-    
     purchase = [df[cat_data == cat].past_3_years_bike_related_purchases.astype(float).sum() for cat in cats.categories]
-    print(purchase)
     per_capital = np.divide(purchase, num_cat)
 
-    plot_bars(cats, [purchase, per_capital], theme)
+    plot_bars(cats, [purchase, per_capital], name_field)
     plot_pie(num_cat, cats.categories)
 
 def clean_gender(df):
@@ -75,13 +73,11 @@ def clean_gender(df):
             df.gender[i] = 'U'
     return df
 
-def analyse_interval(df_new, cat_data, theme):
-    print(df["DOB"][1].ctime().split(" ")[4])
+def get_age(df):
     df_age = df.dropna(subset=['DOB'])
-    lenn = len(df_age)
     df_age["Age"] = 0
 
-    for i in range(1, lenn):
+    for i in range(1, len(df_age)):
         if i not in df_age.index:
             continue
         if isinstance(df_age.DOB[i], datetime.date):
@@ -92,35 +88,21 @@ def analyse_interval(df_new, cat_data, theme):
             df_age["Age"][i] = int(2019 - int(df_age.DOB[i].split("-")[tl-1])) 
         if df_age.Age[i] > 100:
             df_age.drop([i], axis=0, inplace=True)
+            
+    return df_age
 
+
+def analyse_age(df, cat_data, theme):
+    # print(df["DOB"][1].ctime().split(" ")[4])
+
+    df = get_age(df)
 
     num_cat = 22
-    bins = pd.cut(df_age.Age, num_cat, retbins=True)
-    df_age.insert(1, 'age_bin', bins[0])
 
-    num_pur_age = [(df_age.age_bin == cat).sum() for cat in bins[0].values.categories]
-    pur_age = [df_age[df_age.age_bin == cat].past_3_years_bike_related_purchases.sum() for cat in bins[0].values.categories]
-    pur_age_cap = np.divide(pur_age, num_pur_age)
+    bins = pd.cut(df.Age, num_cat, retbins=True)
+    df.insert(1, 'age_bin', bins[0])
 
-    color1 = [1, 0, 0, 0.5]
-    color2 = [0, 0, 0, 0.5]
-
-    plt.figure()
-    fig, ax1 = plt.subplots()
-
-    ax = df_age.Age.plot.hist(bins=22, by="Age", color=[color2])
-    plt.title('customer age distribution')
-
-    ax1.set_xlabel('age group')
-    ax1.set_ylabel('Num of purchase', color=color1)
-
-    ax1.tick_params(axis='y', labelcolor=color1)
-
-    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-
-    plt.bar(np.linspace(0, bins[1][-1], num_cat), pur_age_cap, color=[color1])
-    ax2.set_ylabel('Average value per person', color=color2)  # we already handled the x-label with ax1
-    ax2.tick_params(axis='y', labelcolor=color2)
+    analyse_cat(df, 'age_bin', 'Age')
 
 def order_cluster(cluster_field_name, target_field_name,df,ascending):
     # new_cluster_field_name = 'new_' + cluster_field_name
@@ -139,4 +121,4 @@ def clean_currency(x):
 
 
 if __name__ == '__main__':
-    analyse_cat(df, df.wealth_segment, 'wealth_segment')
+    pass
