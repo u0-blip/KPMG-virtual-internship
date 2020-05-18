@@ -27,10 +27,10 @@ from time import time
 
 
 
-# # In[2]: Import data
+# In[2]: Import data
 
-# customer = pd.read_excel('KPMG_VI_New_raw_data_update_final.xlsx', sheet_name="CustomerDemographic", header=1)
-# new_customer = pd.read_excel('KPMG_VI_New_raw_data_update_final.xlsx', sheet_name="NewCustomerList", header=1)
+customer = pd.read_excel('KPMG_VI_New_raw_data_update_final.xlsx', sheet_name="CustomerDemographic", header=1)
+new_customer = pd.read_excel('KPMG_VI_New_raw_data_update_final.xlsx', sheet_name="NewCustomerList", header=1)
 # transaction = pd.read_excel('KPMG_VI_New_raw_data_update_final.xlsx', sheet_name="Transactions", header=1)
 # address = pd.read_excel('KPMG_VI_New_raw_data_update_final.xlsx', sheet_name="CustomerAddress", header=1)
 
@@ -91,7 +91,7 @@ from time import time
 # plot_coor.plot_coor(tx_graph, 'Recency', 'Frequency','seg_cluster')
 # plot_coor.plot_coor(tx_graph, 'profit', 'Recency','seg_cluster')
 
-## In[6] regression model
+# In[6] regression model
 
 with open('param.yaml', 'rb') as f:
     params = yaml.load(f)
@@ -116,8 +116,8 @@ def get_dummies(df, dummies, keep=None):
     return df
 
 
-tx_3m = transaction[(transaction.transaction_date >= pd.to_datetime('2017-1-1')) & (transaction.transaction_date < pd.to_datetime('2017-6-1'))].reset_index(drop=True)
-tx_user_3m = get_RFM.get_RFM(tx_3m, back_in_time = True)
+# tx_3m = transaction[(transaction.transaction_date >= pd.to_datetime('2017-1-1')) & (transaction.transaction_date < pd.to_datetime('2017-6-1'))].reset_index(drop=True)
+# tx_user_3m = get_RFM.get_RFM(tx_3m, back_in_time = True)
 
 tx_6m = transaction[(transaction.transaction_date >= pd.to_datetime('2017-6-1')) & (transaction.transaction_date < pd.to_datetime('2017-12-1'))].reset_index(drop=True)
 tx_user_6m = get_RFM.get_RFM(tx_6m, back_in_time = False)
@@ -136,8 +136,8 @@ tx_user_6m.rename(columns={'profit':'6 mth profit'}, inplace=True)
 # fig = go.Figure(data=plot_data, layout=plot_layout)
 # pyoff.iplot(fig)
 
-tx_user_6m = tx_user_6m[tx_user_6m['customer_id'].isin(tx_user_3m['customer_id'])]
-tx_merge = pd.merge(tx_user_3m, tx_user_6m[['customer_id', '6 mth profit']], on='customer_id', how='left')
+# tx_user_6m = tx_user_6m[tx_user_6m['customer_id'].isin(tx_user_3m['customer_id'])]
+# tx_merge = pd.merge(tx_user_3m, tx_user_6m[['customer_id', '6 mth profit']], on='customer_id', how='left')
 
 tx_merge = tx_merge.fillna(0)
 tx_merge.groupby('seg_cluster')['6 mth profit'].mean()

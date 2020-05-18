@@ -50,8 +50,8 @@ def get_clust(data, field, num_cluster, order=True, min_cluster=2,  mode='manual
             kmeans = cluster_info[field]
         else:
             print('error, not such field in clustering')
-    data[field + 'Cluster'] = kmeans.predict(data[[field]])
-    data = order_cluster(field + 'Cluster', field,data, order)
+    data[field + 'Cluster'] = kmeans.predict(data[[field]]) + 1 #so that the clustering can start from 1
+    data = order_cluster(field + 'Cluster', field, data, order)
 
     if mode == 'auto':
         return data, num_cluster
