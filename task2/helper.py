@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import datetime
 
 
-def plot_bars(cats, bar, theme):
+def plot_bars(cats, bar, theme, organised=False):
     """ the bar need to be nx2 matrix """
     color1 = [1, 0, 0, 0.5]
     color2 = [0, 0, 0, 0.5]
@@ -15,7 +15,7 @@ def plot_bars(cats, bar, theme):
 
     plt.bar(range(num_cat), bar[0], color=[color1])
     for i, v in enumerate(bar[0]):
-        plt.text(range(num_cat)[i] - 0.25, v + 0.01, str(v))
+        plt.text(range(num_cat)[i] - 0.25, v + 0.01, f"{v:.3e}")
     title = theme + ' distribution'
     plt.title(title)
 
@@ -47,19 +47,21 @@ def plot_pie(num_cat, labels):
     title = 'Pie distribution'
     plt.savefig(title)
 
-def analyse_cat(df, cat_data, name_field):
+def analyse_cat(df, cat_data, name_field, organised=True):
     cat_data = df[cat_data]
     cats = pd.Categorical(cat_data)
 
     num_cat = np.array([(cat_data == cat).sum() for cat in cats.categories])
-    args = np.argsort(num_cat)[::-1]
-    num_cat[::-1].sort()
-    cats.categories = cats.categories[args]
 
-    purchase = [df[cat_data == cat].past_3_years_bike_related_purchases.astype(float).sum() for cat in cats.categories]
+    if organised:
+        args = np.argsort(num_cat)[::-1]
+        num_cat[::-1].sort()
+        cats.categories = cats.categories[args]
+
+    purchase = [df[cat_data == cat].profit.astype(float).sum() for cat in cats.categories]
     per_capital = np.divide(purchase, num_cat)
 
-    plot_bars(cats, [purchase, per_capital], name_field)
+    plot_bars(cats, [purchase, per_capital], name_field, organised=organised)
     plot_pie(num_cat, cats.categories)
 
 def clean_gender(df):
@@ -84,8 +86,13 @@ def get_age(df):
             tl = len(df_age.DOB[i].ctime().split(" "))
             df_age["Age"][i] = int(2019 - int(df_age.DOB[i].ctime().split(" ")[tl-1]))
         elif isinstance(df_age.DOB[i], str):
-            tl = len(df_age.DOB[i].split("-"))
-            df_age["Age"][i] = int(2019 - int(df_age.DOB[i].split("-")[tl-1])) 
+            if '-' in df_age.DOB[i]:
+                tl = len(df_age.DOB[i].split("-"))
+                df_age["Age"][i] = int(2019 - int(df_age.DOB[i].split("-")[tl-1])) 
+            else:
+                tl = len(df_age.DOB[i].split("/"))
+                df_age["Age"][i] = int(2019 - int(df_age.DOB[i].split("/")[tl-1])) 
+
         if df_age.Age[i] > 100:
             df_age.drop([i], axis=0, inplace=True)
             
